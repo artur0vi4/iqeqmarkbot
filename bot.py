@@ -1,10 +1,10 @@
 import telebot
 import re
+import time
 
 TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
 bot = telebot.TeleBot(TOKEN)
 
-# ТВОИ ссылки из скрина (замени все 9):
 INVITE_LINKS = {
     (1,1): "https://t.me/+LDqqCNtUqyhhYTky",  # Спокойное
     (1,2): "https://t.me/+gMgCyag5kTVkMjJi",  # Дружелюбные  
@@ -17,26 +17,30 @@ INVITE_LINKS = {
     (3,3): "https://t.me/+oQRYwvMcjGxjZDU6"  # Видение
 }
 
+user_states = {}
+
 @bot.message_handler(commands=['start'])
 def start(message):
-    text = message.text.replace('/start ', '').upper()
-    iq_match = re.search(r'IQ(\d+)', text)
-    eq_match = re.search(r'EQ(\d+)', text)
-    
-    if iq_match and eq_match:
-        iq = int(iq_match.group(1))
-        eq = int(eq_match.group(1))
-        
-        iq_level = 1 if iq <= 105 else 2 if iq <= 120 else 3
-        eq_level = 1 if eq <= 65 else 2 if eq <= 90 else 3
-        
-        link = INVITE_LINKS.get((iq_level, eq_level), INVITE_LINKS[(2,2)])
-        bot.reply_to(message, f"✅ IQ{iq} EQ{eq}\n🔗 {link}")
-    else:
-        bot.reply_to(message, "❌ Формат: /start IQ115EQ78")
+    user_states[message.from_user.id] = {'step': 1, 'iq': None}
+    bot.reply_to(message, 
+        "Привет! Для распределения по IQ+EQ:\n\n"
+        "1️⃣ Какой у тебя результат IQ? (пиши число)\n"
+        "💡 Пример: 115")
 
-while True:
-    try:
-        bot.polling(none_stop=True)
-    except:
-        pass
+@bot.message_handler(func=lambda m: True)
+def handle_message(message):
+    user_id = message.from_user.id
+    if user_id not in user_states:
+        bot.reply_to(message, "Напиши /start")
+        return
+    
+    state = user_states[user_id]
+    
+    if state['step'] == 1:  # Ждём IQ
+        try:
+            iq = int(message.text)
+            state['iq'] = iq
+            state['step'] = 2
+            bot.reply_to(message, f"Отлично! IQ = {iq}\n\n2️⃣ Какой результат EQ? (пиши число)")
+        except:
+            bot.reply_to(messag
