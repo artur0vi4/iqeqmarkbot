@@ -43,4 +43,41 @@ def handle_message(message):
             state['step'] = 2
             bot.reply_to(message, f"Отлично! IQ = {iq}\n\n2️⃣ Какой результат EQ? (пиши число)")
         except:
-            bot.reply_to(messag
+            bot.reply_to(message, "❌ Пиши ЧИСЛО для IQ\nПример: 115")
+    
+    elif state['step'] == 2:  # Ждём EQ
+        try:
+            eq = int(message.text)
+            iq = state['iq']
+            
+            iq_level = 1 if iq <= 105 else 2 if iq <= 120 else 3
+            eq_level = 1 if eq <= 65 else 2 if eq <= 90 else 3
+            
+            link = INVITE_LINKS.get((iq_level, eq_level), INVITE_LINKS[(2,2)])
+            group_name = get_group_name(iq_level, eq_level)
+            
+            bot.reply_to(message, 
+                f"✅ Твой профиль: IQ {iq} | EQ {eq}\n"
+                f"🎯 Группа: {group_name}\n"
+                f"🔗 {link}")
+            
+            del user_states[user_id]
+        except:
+            bot.reply_to(message, "❌ Пиши ЧИСЛО для EQ")
+
+def get_group_name(iq_l, eq_l):
+    names = {
+        (1,1): "Спокойное общение", (1,2): "Дружелюбные",
+        (1,3): "Теплые связи", (2,1): "Практики",
+        (2,2): "Баланс", (2,3): "Гармония",
+        (3,1): "Аналитики", (3,2): "Лидерское",
+        (3,3): "Видение"
+    }
+    return names.get((iq_l, eq_l), "Баланс")
+
+print("🤖 IQ+EQ бот запущен!")
+while True:
+    try:
+        bot.polling(none_stop=True)
+    except:
+        time.sleep(15)
