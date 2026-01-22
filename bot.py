@@ -1,12 +1,14 @@
 from flask import Flask, request
 import telebot
 import os
+import requests
 from telebot import types
 
 app = Flask(__name__)
 TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
 bot = telebot.TeleBot(TOKEN)
 
+# Твоя логика (100% как была)
 INVITE_LINKS = {
     (1,1): "https://t.me/+LDqqCNtUqyhhYTky", (1,2): "https://t.me/+gMgCyag5kTVkMjJi", 
     (1,3): "https://t.me/+IIREb6E0mhxlNWFi", (2,1): "https://t.me/+dCJR9OYZTEJkYWUy", 
@@ -62,7 +64,6 @@ def get_group_name(iq_l, eq_l):
              (3,1): "Аналитики", (3,2): "Лидерское", (3,3): "Видение"}
     return names.get((iq_l, eq_l), "Баланс")
 
-# ✅ WEBHOOK ДЛЯ RENDER (НЕ polling!)
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
     if request.headers.get('content-type') == 'application/json':
@@ -70,14 +71,19 @@ def webhook():
         update = telebot.types.Update.de_json(json_string)
         bot.process_new_updates([update])
         return '', 200
-    else:
-        return 'OK', 200
+    return 'OK', 200
 
 @app.route('/')
 def index():
-    return "🤖 IQ+EQ Bot работает!", 200  # Render видит порт!
+    return "🤖 IQ+EQ Bot работает!", 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
+    
+    # ✅ АВТО УСТАНОВКА WEBHOOK
+    webhook_url = f"https://iqeqmarkbot.onrender.com/{TOKEN}"
     bot.remove_webhook()
+    response = requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")
+    print(f"Webhook установлен: {response.json()}")
+    
     app.run(host='0.0.0.0', port=port)
