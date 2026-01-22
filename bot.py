@@ -1,101 +1,102 @@
 import telebot
-import time
 from telebot import types
+import os
 
-TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
+# ТВОЙ TOKEN из Render Environment Variables
+TOKEN = os.getenv('BOT_TOKEN')
 bot = telebot.TeleBot(TOKEN)
 
-INVITE_LINKS = {
-(1,1): "https://t.me/+LDqqCNtUqyhhYTky", # Спокойное
-(1,2): "https://t.me/+gMgCyag5kTVkMjJi", # Дружелюбные
-(1,3): "https://t.me/+IIREb6E0mhxlNWFi", # Теплые
-(2,1): "https://t.me/+dCJR9OYZTEJkYWUy", # Практики
-(2,2): "https://t.me/+MuW-2xg2744xMjMy", # Баланс
-(2,3): "https://t.me/+xrBnir7mBy5hNTBi", # Гармония
-(3,1): "https://t.me/+gWEKGjK_fjJmZTMy", # Аналитики
-(3,2): "https://t.me/+aLGHxsoyaA8xY2Yy", # Лидерское
-(3,3): "https://t.me/+oQRYwvMcjGxjZDU6" # Видение
+# Ссылки на группы (ЗАМЕНИ на реальные)
+GROUPS = {
+    "1_1": "https://t.me/+group1_spokoinoe",
+    "1_2": "https://t.me/+group2_druzhelyubnye", 
+    "1_3": "https://t.me/+group3_teplye",
+    "2_1": "https://t.me/+group4_praktiki",
+    "2_2": "https://t.me/+group5_balans", 
+    "2_3": "https://t.me/+group6_garmoniya",
+    "3_1": "https://t.me/+group7_analitiki",
+    "3_2": "https://t.me/+group8_liderskoe",
+    "3_3": "https://t.me/+group9_videnie"
 }
-
-user_states = {}
 
 @bot.message_handler(commands=['start'])
 def start(message):
-markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-btn1 = types.KeyboardButton("1️⃣ IQ 70-105")
-btn2 = types.KeyboardButton("2️⃣ IQ 106-120")
-btn3 = types.KeyboardButton("3️⃣ IQ 121+")
-markup.add(btn1, btn2, btn3)
+    markup = types.InlineKeyboardMarkup()
+    btn_start = types.InlineKeyboardButton("🚀 НАЧАТЬ ТЕСТ", callback_data="start_quiz")
+    markup.add(btn_start)
+    
+    bot.send_message(message.chat.id,
+        "🎯 Добро пожаловать в IQ+EQ Знакомства!\n\n"
+        "💡 Найди людей с похожим мышлением и чувствами\n\n"
+        "👇 Нажми кнопку для старта:", 
+        reply_markup=markup)
 
-user_states[message.from_user.id] = {'step': 'iq'}
-bot.send_message(message.chat.id,
-"🚀 Добро пожаловать в IQ+EQ знакомства!\n\n"
-"1️⃣ Какой у тебя IQ по тесту?\n💡 Выбери диапазон:",
-reply_markup=markup)
+@bot.callback_query_handler(func=lambda call: call.data == "start_quiz")
+def show_iq_menu(call):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    iq_buttons = [
+        types.InlineKeyboardButton("1️⃣ IQ 70-105", callback_data="iq1"),
+        types.InlineKeyboardButton("2️⃣ IQ 106-120", callback_data="iq2"), 
+        types.InlineKeyboardButton("3️⃣ IQ 121+", callback_data="iq3")
+    ]
+    markup.add(*iq_buttons)
+    
+    bot.edit_message_text(
+        "🧠 Шаг 1/2\n\nКакой у тебя IQ по тесту?", 
+        call.message.chat.id, 
+        call.message.message_id,
+        reply_markup=markup
+    )
 
-@bot.message_handler(func=lambda m: True)
-def handle_message(message):
-user_id = message.from_user.id
-if user_id not in user_states:
-bot.reply_to(message, "Напиши /start")
-return
+@bot.callback_query_handler(func=lambda call: call.data.startswith('iq'))
+def show_eq_menu(call):
+    iq_level = call.data[2]  
+    
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    eq_buttons = [
+        types.InlineKeyboardButton("1️⃣ Низкий EQ", callback_data=f"eq1_{iq_level}"),
+        types.InlineKeyboardButton("2️⃣ Средний EQ", callback_data=f"eq2_{iq_level}"),
+        types.InlineKeyboardButton("3️⃣ Высокий EQ", callback_data=f"eq3_{iq_level}")
+    ]
+    markup.add(*eq_buttons)
+    
+    bot.edit_message_text(
+        "❤️ Шаг 2/2\n\nКакой у тебя EQ по тесту?", 
+        call.message.chat.id, 
+        call.message.message_id,
+        reply_markup=markup
+    )
 
-state = user_states[user_id]
+@bot.callback_query_handler(func=lambda call: call.data.startswith('eq'))
+def send_group_link(call):
+    parts = call.data.split('_')  # eq1_2 → ['eq1', '2']
+    iq = parts[1][0]  # '2' из 'eq1_2'
+    eq = parts[0][2]  # '1' из 'eq1'
+    
+    group_key = f"{iq}_{eq}"
+    group_link = GROUPS.get(group_key, "https://t.me/your_channel")
+    
+    markup = types.InlineKeyboardMarkup()
+    btn_group = types.InlineKeyboardButton("👥 Перейти в группу", url=group_link)
+    btn_again = types.InlineKeyboardButton("🔄 Пройти заново", callback_data="start_quiz")
+    markup.add(btn_group, btn_again)
+    
+    matrix = """
+🧠💡 IQ+EQ МАТРИЦА 💡🧠
 
-if state['step'] == 'iq':
-if "1️⃣" in message.text: iq_level = 1
-elif "2️⃣" in message.text: iq_level = 2
-elif "3️⃣" in message.text: iq_level = 3
-else:
-bot.reply_to(message, "Выбери кнопку IQ!")
-return
+Спокойное    Дружелюбные    Теплые
+Практики     • БАЛАНС •      Гармония  
+Аналитики    Лидерское      ВИДЕНИЕ
+    """
+    
+    bot.edit_message_text(
+        f"🎉 Твоя группа: **{group_key}**\n\n{matrix}\n\n"
+        f"✅ Переходи по ссылке ниже!", 
+        call.message.chat.id, 
+        call.message.message_id,
+        reply_markup=markup,
+        parse_mode='Markdown'
+    )
 
-state['iq_level'] = iq_level
-state['step'] = 'eq'
-
-markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-btn1 = types.KeyboardButton("1️⃣ EQ Низкий")
-btn2 = types.KeyboardButton("2️⃣ EQ Средний")
-btn3 = types.KeyboardButton("3️⃣ EQ Высокий")
-markup.add(btn1, btn2, btn3)
-
-bot.send_message(message.chat.id,
-"2️⃣ Какой у тебя EQ по тесту?\n💡 Выбери уровень:",
-reply_markup=markup)
-
-elif state['step'] == 'eq':
-if "1️⃣" in message.text: eq_level = 1
-elif "2️⃣" in message.text: eq_level = 2
-elif "3️⃣" in message.text: eq_level = 3
-else:
-bot.reply_to(message, "Выбери кнопку EQ!")
-return
-
-iq_level = state['iq_level']
-link = INVITE_LINKS[(iq_level, eq_level)]
-group_name = get_group_name(iq_level, eq_level)
-
-bot.send_message(message.chat.id,
-f"✅ Твой профиль: IQ {'Низкий' if iq_level==1 else 'Средний' if iq_level==2 else 'Высокий'} | "
-f"EQ {'Низкий' if eq_level==1 else 'Средний' if eq_level==2 else 'Высокий'}\n\n"
-f"🎯 Группа: {group_name}\n🔗 {link}",
-reply_markup=types.ReplyKeyboardRemove())
-
-del user_states[user_id]
-
-def get_group_name(iq_l, eq_l):
-names = {
-(1,1): "Спокойное общение", (1,2): "Дружелюбные",
-(1,3): "Теплые связи", (2,1): "Практики",
-(2,2): "Баланс", (2,3): "Гармония",
-(3,1): "Аналитики", (3,2): "Лидерское",
-(3,3): "Видение"
-}
-return names.get((iq_l, eq_l), "Баланс")
-
-print("🤖 IQ+EQ V2 кнопочный бот запущен!")
-while True:
-try:
-bot.polling(none_stop=True)
-except:
-time.sleep(15)
+print("🤖 Бот запущен!")
+bot.infinity_polling()
