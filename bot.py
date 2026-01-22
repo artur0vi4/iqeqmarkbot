@@ -1,31 +1,3 @@
-from flask import Flask, request
-import telebot
-import os
-import requests
-from telebot import types
-
-app = Flask(__name__)
-TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
-bot = telebot.TeleBot(TOKEN)
-
-# Твоя логика (100% как была)
-INVITE_LINKS = {
-    (1,1): "https://t.me/+LDqqCNtUqyhhYTky", (1,2): "https://t.me/+gMgCyag5kTVkMjJi", 
-    (1,3): "https://t.me/+IIREb6E0mhxlNWFi", (2,1): "https://t.me/+dCJR9OYZTEJkYWUy", 
-    (2,2): "https://t.me/+MuW-2xg2744xMjMy", (2,3): "https://t.me/+xrBnir7mBy5hNTBi", 
-    (3,1): "https://t.me/+gWEKGjK_fjJmZTMy", (3,2): "https://t.me/+aLGHxsoyaA8xY2Yy", 
-    (3,3): "https://t.me/+oQRYwvMcjGxjZDU6"
-}
-
-user_states = {}
-
-@bot.message_handler(commands=['start'])
-def start(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    markup.add("1️⃣ IQ 70-105", "2️⃣ IQ 106-120", "3️⃣ IQ 121+")
-    user_states[message.from_user.id] = {'step': 'iq'}
-    bot.send_message(message.chat.id, "🧠 IQ по тесту? Выбери:", reply_markup=markup)
-
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
     user_id = message.from_user.id
@@ -33,9 +5,14 @@ def handle_message(message):
     
     state = user_states[user_id]
     if state['step'] == 'iq':
-        iq_map = {"1️⃣": 1, "2️⃣": 2, "3️⃣": 3}
+        # ✅ ФИКС: точное сравнение текста кнопок
+        iq_map = {
+            "1️⃣ IQ 70-105": 1, 
+            "2️⃣ IQ 106-120": 2, 
+            "3️⃣ IQ 121+": 3
+        }
         iq_level = iq_map.get(message.text)
-        if not iq_level: return bot.reply_to(message, "❌ IQ кнопку!")
+        if not iq_level: return bot.reply_to(message, "❌ Выбери IQ кнопку!")
         
         state['iq_level'] = iq_level
         state['step'] = 'eq'
@@ -44,9 +21,14 @@ def handle_message(message):
         return bot.send_message(message.chat.id, "❤️ EQ по тесту?", reply_markup=markup)
     
     elif state['step'] == 'eq':
-        eq_map = {"1️⃣": 1, "2️⃣": 2, "3️⃣": 3}
+        # ✅ ФИКС: точное сравнение EQ кнопок
+        eq_map = {
+            "1️⃣ EQ Низкий": 1,
+            "2️⃣ EQ Средний": 2, 
+            "3️⃣ EQ Высокий": 3
+        }
         eq_level = eq_map.get(message.text)
-        if not eq_level: return bot.reply_to(message, "❌ EQ кнопку!")
+        if not eq_level: return bot.reply_to(message, "❌ Выбери EQ кнопку!")
         
         iq_level = state['iq_level']
         link = INVITE_LINKS[(iq_level, eq_level)]
@@ -57,33 +39,3 @@ def handle_message(message):
             reply_markup=types.ReplyKeyboardRemove(),
             parse_mode='Markdown')
         del user_states[user_id]
-
-def get_group_name(iq_l, eq_l):
-    names = {(1,1): "Спокойное", (1,2): "Дружелюбные", (1,3): "Теплые", 
-             (2,1): "Практики", (2,2): "Баланс", (2,3): "Гармония", 
-             (3,1): "Аналитики", (3,2): "Лидерское", (3,3): "Видение"}
-    return names.get((iq_l, eq_l), "Баланс")
-
-@app.route(f'/{TOKEN}', methods=['POST'])
-def webhook():
-    if request.headers.get('content-type') == 'application/json':
-        json_string = request.get_data().decode('utf-8')
-        update = telebot.types.Update.de_json(json_string)
-        bot.process_new_updates([update])
-        return '', 200
-    return 'OK', 200
-
-@app.route('/')
-def index():
-    return "🤖 IQ+EQ Bot работает!", 200
-
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    
-    # ✅ АВТО УСТАНОВКА WEBHOOK
-    webhook_url = f"https://iqeqmarkbot.onrender.com/{TOKEN}"
-    bot.remove_webhook()
-    response = requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")
-    print(f"Webhook установлен: {response.json()}")
-    
-    app.run(host='0.0.0.0', port=port)
