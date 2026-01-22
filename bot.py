@@ -33,6 +33,7 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == "start_test")
 def start_quiz(call):
+    # ✅ ИСПРАВЛЕНО: send_message вместо edit_message_text
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
     btn1 = types.KeyboardButton("1️⃣ IQ 70-105")
     btn2 = types.KeyboardButton("2️⃣ IQ 106-120") 
@@ -40,12 +41,11 @@ def start_quiz(call):
     markup.add(btn1, btn2, btn3)
     
     user_states[call.from_user.id] = {'step': 'iq'}
-    bot.edit_message_text("1️⃣ Какой у тебя IQ по тесту?\n💡 Выбери диапазон:", 
-        call.message.chat.id, 
-        call.message.message_id,
+    bot.send_message(call.message.chat.id,  # ← НОВОЕ
+        "1️⃣ Какой у тебя IQ по тесту?\n💡 Выбери диапазон:", 
         reply_markup=markup)
 
-# ВСЁ ОСТАЛОСЬ КАК БЫЛО
+# Остальной код БЕЗ ИЗМЕНЕНИЙ
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
     user_id = message.from_user.id
