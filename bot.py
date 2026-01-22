@@ -1,8 +1,9 @@
+from flask import Flask, request
 import telebot
 import os
-import threading
 from telebot import types
 
+app = Flask(__name__)
 TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
 bot = telebot.TeleBot(TOKEN)
 
@@ -61,20 +62,22 @@ def get_group_name(iq_l, eq_l):
              (3,1): "Аналитики", (3,2): "Лидерское", (3,3): "Видение"}
     return names.get((iq_l, eq_l), "Баланс")
 
-# ✅ Render Web Service фикс (2 строки!)
-def keep_alive():
-    import socket
-    s = socket.socket()
-    port = int(os.environ.get('PORT', 10000))
-    s.bind(('0.0.0.0', port))  # ← Render видит порт!
-    print(f"✅ Render порт {port} открыт!")
-    s.listen(5)
-    while True:
-        s.accept()
+# ✅ WEBHOOK ДЛЯ RENDER (НЕ polling!)
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return '', 200
+    else:
+        return 'OK', 200
+
+@app.route('/')
+def index():
+    return "🤖 IQ+EQ Bot работает!", 200  # Render видит порт!
 
 if __name__ == '__main__':
-    # Бот в фоне
-    threading.Thread(target=lambda: bot.infinity_polling(), daemon=True).start()
-    print("🤖 Бот запущен!")
-    # Render порт
-    keep_alive()
+    port = int(os.environ.get('PORT', 10000))
+    bot.remove_webhook()
+    app.run(host='0.0.0.0', port=port)
