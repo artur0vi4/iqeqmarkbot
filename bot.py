@@ -1,6 +1,6 @@
 import telebot
-import re
 import time
+from telebot import types
 
 TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
 bot = telebot.TeleBot(TOKEN)
@@ -21,11 +21,17 @@ user_states = {}
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    user_states[message.from_user.id] = {'step': 1, 'iq': None}
-    bot.reply_to(message, 
-        "Привет! Для распределения по IQ+EQ:\n\n"
-        "1️⃣ Какой у тебя результат IQ? (пиши число)\n"
-        "💡 Пример: 115")
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    btn1 = types.KeyboardButton("1️⃣ IQ 70-105")
+    btn2 = types.KeyboardButton("2️⃣ IQ 106-120") 
+    btn3 = types.KeyboardButton("3️⃣ IQ 121+")
+    markup.add(btn1, btn2, btn3)
+    
+    user_states[message.from_user.id] = {'step': 'iq'}
+    bot.send_message(message.chat.id, 
+        "🚀 Добро пожаловать в IQ+EQ знакомства!\n\n"
+        "1️⃣ Какой у тебя IQ по тесту?\n💡 Выбери диапазон:", 
+        reply_markup=markup)
 
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
@@ -36,34 +42,46 @@ def handle_message(message):
     
     state = user_states[user_id]
     
-    if state['step'] == 1:  # Ждём IQ
-        try:
-            iq = int(message.text)
-            state['iq'] = iq
-            state['step'] = 2
-            bot.reply_to(message, f"Отлично! IQ = {iq}\n\n2️⃣ Какой результат EQ? (пиши число)")
-        except:
-            bot.reply_to(message, "❌ Пиши ЧИСЛО для IQ\nПример: 115")
+    if state['step'] == 'iq':
+        if "1️⃣" in message.text: iq_level = 1
+        elif "2️⃣" in message.text: iq_level = 2
+        elif "3️⃣" in message.text: iq_level = 3
+        else: 
+            bot.reply_to(message, "Выбери кнопку IQ!")
+            return
+        
+        state['iq_level'] = iq_level
+        state['step'] = 'eq'
+        
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+        btn1 = types.KeyboardButton("1️⃣ EQ Низкий")
+        btn2 = types.KeyboardButton("2️⃣ EQ Средний") 
+        btn3 = types.KeyboardButton("3️⃣ EQ Высокий")
+        markup.add(btn1, btn2, btn3)
+        
+        bot.send_message(message.chat.id, 
+            "2️⃣ Какой у тебя EQ по тесту?\n💡 Выбери уровень:", 
+            reply_markup=markup)
     
-    elif state['step'] == 2:  # Ждём EQ
-        try:
-            eq = int(message.text)
-            iq = state['iq']
-            
-            iq_level = 1 if iq <= 105 else 2 if iq <= 120 else 3
-            eq_level = 1 if eq <= 65 else 2 if eq <= 90 else 3
-            
-            link = INVITE_LINKS.get((iq_level, eq_level), INVITE_LINKS[(2,2)])
-            group_name = get_group_name(iq_level, eq_level)
-            
-            bot.reply_to(message, 
-                f"✅ Твой профиль: IQ {iq} | EQ {eq}\n"
-                f"🎯 Группа: {group_name}\n"
-                f"🔗 {link}")
-            
-            del user_states[user_id]
-        except:
-            bot.reply_to(message, "❌ Пиши ЧИСЛО для EQ")
+    elif state['step'] == 'eq':
+        if "1️⃣" in message.text: eq_level = 1
+        elif "2️⃣" in message.text: eq_level = 2
+        elif "3️⃣" in message.text: eq_level = 3
+        else: 
+            bot.reply_to(message, "Выбери кнопку EQ!")
+            return
+        
+        iq_level = state['iq_level']
+        link = INVITE_LINKS[(iq_level, eq_level)]
+        group_name = get_group_name(iq_level, eq_level)
+        
+        bot.send_message(message.chat.id, 
+            f"✅ Твой профиль: IQ {'Низкий' if iq_level==1 else 'Средний' if iq_level==2 else 'Высокий'} | "
+            f"EQ {'Низкий' if eq_level==1 else 'Средний' if eq_level==2 else 'Высокий'}\n\n"
+            f"🎯 Группа: {group_name}\n🔗 {link}", 
+            reply_markup=types.ReplyKeyboardRemove())
+        
+        del user_states[user_id]
 
 def get_group_name(iq_l, eq_l):
     names = {
@@ -75,7 +93,7 @@ def get_group_name(iq_l, eq_l):
     }
     return names.get((iq_l, eq_l), "Баланс")
 
-print("🤖 IQ+EQ бот запущен!")
+print("🤖 IQ+EQ V2 кнопочный бот запущен!")
 while True:
     try:
         bot.polling(none_stop=True)
