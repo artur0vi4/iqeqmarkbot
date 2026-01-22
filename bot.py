@@ -1,13 +1,12 @@
 import telebot
 from telebot import types
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# ТВОЙ TOKEN из Render Environment Variables
 TOKEN = os.getenv('BOT_TOKEN')
 bot = telebot.TeleBot(TOKEN)
 
-# Ссылки на группы (твои 9 групп)
+# Ссылки на группы (ЗАМЕНИ на реальные)
 GROUPS = {
     "1_1": "https://t.me/+group1_spokoinoe",
     "1_2": "https://t.me/+group2_druzhelyubnye", 
@@ -32,7 +31,6 @@ def start(message):
         "👇 Нажми кнопку для старта:", 
         reply_markup=markup)
 
-# Обработчик кнопки "НАЧАТЬ"
 @bot.callback_query_handler(func=lambda call: call.data == "start_quiz")
 def show_iq_menu(call):
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -50,10 +48,9 @@ def show_iq_menu(call):
         reply_markup=markup
     )
 
-# Обработчик IQ кнопок
 @bot.callback_query_handler(func=lambda call: call.data.startswith('iq'))
 def show_eq_menu(call):
-    iq_level = call.data[2]  # iq1, iq2, iq3 → 1, 2, 3
+    iq_level = call.data[2]  
     
     markup = types.InlineKeyboardMarkup(row_width=1)
     eq_buttons = [
@@ -70,10 +67,11 @@ def show_eq_menu(call):
         reply_markup=markup
     )
 
-# Обработчик финальных кнопок (результат)
 @bot.callback_query_handler(func=lambda call: call.data.startswith('eq'))
 def send_group_link(call):
-    _, iq, eq = call.data.split('_')  # eq1_2 → iq=1, eq=2
+    parts = call.data.split('_')  # eq1_2 → ['eq1', '2']
+    iq = parts[1][0]  # '2' из 'eq1_2'
+    eq = parts[0][2]  # '1' из 'eq1'
     
     group_key = f"{iq}_{eq}"
     group_link = GROUPS.get(group_key, "https://t.me/your_channel")
@@ -83,7 +81,6 @@ def send_group_link(call):
     btn_again = types.InlineKeyboardButton("🔄 Пройти заново", callback_data="start_quiz")
     markup.add(btn_group, btn_again)
     
-    # Матрица 3x3 для наглядности
     matrix = """
 🧠💡 IQ+EQ МАТРИЦА 💡🧠
 
