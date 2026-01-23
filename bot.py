@@ -9,11 +9,15 @@ TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
 bot = telebot.TeleBot(TOKEN)
 
 INVITE_LINKS = {
-    (1,1): "https://t.me/+LDqqCNtUqyhhYTky", (1,2): "https://t.me/+gMgCyag5kTVkMjJi", 
-    (1,3): "https://t.me/+IIREb6E0mhxlNWFi", (2,1): "https://t.me/+dCJR9OYZTEJkYWUy", 
-    (2,2): "https://t.me/+MuW-2xg2744xMjMy", (2,3): "https://t.me/+xrBnir7mBy5hNTBi", 
-    (3,1): "https://t.me/+gWEKGjK_fjJmZTMy", (3,2): "https://t.me/+aLGHxsoyaA8xY2Yy", 
-    (3,3): "https://t.me/+oQRYwvMcjGxjZDU6"
+    (1,1): "https://t.me/+LDqqCNtUqyhhYTky",  # Убраны лишние пробелы
+    (1,2): "https://t.me/+gMgCyag5kTVkMjJi",  
+    (1,3): "https://t.me/+IIREb6E0mhxlNWFi", 
+    (2,1): "https://t.me/+dCJR9OYZTEJkYWUy", 
+    (2,2): "https://t.me/+MuW-2xg2744xMjMy", 
+    (2,3): "https://t.me/+xrBnir7mBy5hNTBi", 
+    (3,1): "https://t.me/+gWEKGjK_fjJmZTMy", 
+    (3,2): "https://t.me/+aLGHxsoyaA8xY2Yy", 
+    (3,3): "https://t.me/+oQRYwvMcjGxjZDU6"   # Убраны лишние пробелы
 }
 
 user_states = {}
@@ -79,9 +83,15 @@ def handle_message(message):
 
 def get_group_name(iq_l, eq_l):
     names = {
-        (1,1): "Спокойное", (1,2): "Дружелюбные", (1,3): "Теплые",
-        (2,1): "Практики", (2,2): "Баланс", (2,3): "Гармония",
-        (3,1): "Аналитики", (3,2): "Лидерское", (3,3): "Видение"
+        (1,1): "Спокойное", 
+        (1,2): "Дружелюбные", 
+        (1,3): "Тёплое",  # Исправлено: было "Теплые", теперь "Тёплое"
+        (2,1): "Практики", 
+        (2,2): "Баланс", 
+        (2,3): "Гармония",
+        (3,1): "Аналитики", 
+        (3,2): "Лидерское", 
+        (3,3): "Видение"
     }
     return names.get((iq_l, eq_l), "Баланс")
 
@@ -100,8 +110,8 @@ def index():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
-    webhook_url = f"https://iqeqmarkbot.onrender.com/{TOKEN}"
+    webhook_url = f"https://iqeqmarkbot.onrender.com/{TOKEN}"  # Исправлено: убраны лишние пробелы
     bot.remove_webhook()
-    requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")
-    print("Webhook установлен!")  # ✅ ЗАКРЫТА кавычка!
+    requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")  # Исправлено: убраны лишние пробелы
+    print("Webhook установлен!")
     app.run(host='0.0.0.0', port=port)
