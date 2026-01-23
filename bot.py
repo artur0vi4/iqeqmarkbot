@@ -6,7 +6,7 @@ from telebot import types
 
 app = Flask(__name__)
 TOKEN = "8525835073:AAGfW3flAKC5yxQRGUR4UoH3sliXmDYvIbc"
-bot = telebot.TeleBot(TOKEN)  # ← bot ДО handlers!
+bot = telebot.TeleBot(TOKEN)
 
 INVITE_LINKS = {
     (1,1): "https://t.me/+LDqqCNtUqyhhYTky", (1,2): "https://t.me/+gMgCyag5kTVkMjJi", 
@@ -18,7 +18,6 @@ INVITE_LINKS = {
 
 user_states = {}
 
-# ✅ HANDLERS ПОСЛЕ bot = telebot.TeleBot()
 @bot.message_handler(commands=['start'])
 def start(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
@@ -29,7 +28,7 @@ def start(message):
 @bot.message_handler(func=lambda m: True)
 def handle_message(message):
     user_id = message.from_user.id
-    print(f"📨 Получено: '{message.text}'")
+    print(f"Получено: '{message.text}'")
     
     if user_id not in user_states: 
         bot.reply_to(message, "👆 /start")
@@ -50,7 +49,7 @@ def handle_message(message):
         
         state['iq_level'] = iq_level
         state['step'] = 'eq'
-        print(f"✅ IQ: {iq_level}")
+        print(f"IQ: {iq_level}")
         
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
         markup.add("1️⃣ EQ Низкий", "2️⃣ EQ Средний", "3️⃣ EQ Высокий")
@@ -75,7 +74,7 @@ def handle_message(message):
             f"🎉 ГРУППА: **{group_name}**\n🔗 {link}", 
             reply_markup=types.ReplyKeyboardRemove(),
             parse_mode='Markdown')
-        print(f"✅ Группа: {group_name}")
+        print(f"Группа: {group_name}")
         del user_states[user_id]
 
 def get_group_name(iq_l, eq_l):
@@ -97,11 +96,12 @@ def webhook():
 
 @app.route('/')
 def index():
-    return "🤖 IQ+EQ Bot работает!", 200
+    return "IQ+EQ Bot работает!", 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 10000))
     webhook_url = f"https://iqeqmarkbot.onrender.com/{TOKEN}"
     bot.remove_webhook()
     requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")
-    print("🚀
+    print("Webhook установлен!")  # ✅ ЗАКРЫТА кавычка!
+    app.run(host='0.0.0.0', port=port)
